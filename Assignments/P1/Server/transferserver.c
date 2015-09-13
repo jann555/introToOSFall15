@@ -82,8 +82,10 @@ int main(int argc, char **argv) {
 	int nsockfd; 
 	int num;
 	int sin_size; 
+	
 	struct sockaddr_in addr_local; /* client addr */
 	struct sockaddr_in addr_remote; /* server addr */
+	sin_size = sizeof(struct sockaddr_in);
 	char revbuf[BUFSIZE]; // Receiver buffer
 
 	/* Get the Socket file descriptor */
@@ -124,10 +126,11 @@ int main(int argc, char **argv) {
 	}
 	else{
 		printf ("[Server] Listening the port %d successfully.\n", portno);}
-
+		
+	
 	while(1)
 	{
-		sin_size = sizeof(struct sockaddr_in);
+		
 
 		/* Wait a connection, and obtain a new socket file despriptor for single connection */
 		if ((nsockfd = accept(sockfd, (struct sockaddr *)&addr_remote, &sin_size)) == -1) 
@@ -144,30 +147,36 @@ int main(int argc, char **argv) {
 		
 		    char* fs_name = strcat(strcat(cwd,"/"),filename);
 		    char sdbuf[BUFSIZE]; // Send buffer
-		    printf("[Server] Sending %s to the Client...", fs_name);
+		    printf("[Server] Sending %s to the Client...\n", fs_name);
 		    FILE *fs = fopen(fs_name, "r");
 		    if(fs == NULL)
 		    {
 		        fprintf(stderr, "ERROR: File %s not found on server. (errno = %d)\n", fs_name, errno);
-				exit(1);
+			close(nsockfd);
+			exit(1);
 		    }
 
 		    bzero(sdbuf, BUFSIZE); 
 		    size_t fs_block_sz;
 		    ssize_t sent;
+		    int bt;
 		    while((fs_block_sz = fread(sdbuf, sizeof(char), BUFSIZE, fs))>0)
 		    {
-		        if(sent = send(nsockfd, sdbuf, fs_block_sz, 0) < 0)
+		        if(0> send(nsockfd, sdbuf, fs_block_sz, 0))
 		        {
 		            fprintf(stderr, "ERROR: Failed to send file %s. (errno = %d)\n", fs_name, errno);
+			    fclose(fs);
+			    close(nsockfd);
 		            exit(1);
 		        }
-		        bzero(sdbuf, BUFSIZE);
+		       bt = bt+ (int)fs_block_sz;
+		       bzero(sdbuf, BUFSIZE);
 		    }
+		    
 		    printf("Ok sent to client!\n");
 		    fclose(fs);
 		    
-		    printf("[Server] Connection with Client closed. Data Sent BS:%d. Server will wait now...\n",(int)fs_block_sz);
+		    printf("[Server] Connection with Client closed. Data Sent BS:[%d].\n Server will wait now...\n",bt);
 		   // while(waitpid(-1, NULL, WNOHANG) > 0);
 		//}
 	}

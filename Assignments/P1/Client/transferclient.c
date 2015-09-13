@@ -76,10 +76,10 @@ int main(int argc, char **argv) {
 	cwd = getcwd( buff, BUFSIZE +1);
 	strcat(strcat(cwd,"/"),filename);
 	
-	printf("[Client] Receiveing file from Server and saving it...");
+	printf("[Client] Receiveing file from Server and saving it...\n");
 	char* fr_name = cwd;
-	printf("File Dir: %s ", cwd);
 	FILE *fr = fopen(fr_name, "a");
+	//int fr = open(fr_name, O_CREAT | O_TRUNC, S_IRUSR);
 	
 	if(fr == NULL)
 	{fprintf(stderr, "File %s Cannot be opened.(errno = %d)\n", fr_name, errno);exit(1);}      
@@ -87,22 +87,24 @@ int main(int argc, char **argv) {
 	{
 	  bzero(revbuf, BUFSIZE); 
 	  int fr_block_sz = 0;
-	  
+	  int br =0;
 	    while((fr_block_sz = recv(sockfd, revbuf, BUFSIZE, 0)) > 0)
 	    {
-		int write_sz = fwrite(revbuf, sizeof(char), fr_block_sz, fr);
+		br = br + (int)fr_block_sz;
+		int write_sz = fwrite(revbuf, sizeof(char), recv(sockfd, revbuf, BUFSIZE, 0), fr);
 	        if(write_sz < fr_block_sz)
-			{
-	            error("File write failed.\n");exit(1);
-	        }
-			bzero(revbuf, BUFSIZE);
-			if (fr_block_sz == 0 || fr_block_sz != BUFSIZE) 
-			{break;}
+		{fprintf(stderr,"File write failed. (errno = %d\n",errno);close (sockfd);exit(1);}
+		//bzero(revbuf, BUFSIZE);
+		
+		if (fr_block_sz == 0 || fr_block_sz != BUFSIZE) 
+		break;
+		
 		
 	    }
 	    
 	    
-	    printf("Ok File received from server! ans saved in %s \n", fr_name);
+	    printf("File %s received OK from server! and saved \n", filename);
+	    printf("Total Bits Received: %d\n", br);
 	    
 	}
 	fclose(fr);

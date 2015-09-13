@@ -20,12 +20,12 @@
 "  -h                  Show this help message\n"                              
 
 /* Main ========================================================= */
+int readsocket(int socket, char *buffer, FILE *file);
 int main(int argc, char **argv) {
 	int option_char = 0;
 	char *hostname = "localhost";
 	unsigned short portno = 8888;
 	char *filename = "foo.txt";
-
 	// Parse and set command line arguments
 	while ((option_char = getopt(argc, argv, "s:p:o:h")) != -1) {
 		switch (option_char) {
@@ -79,36 +79,34 @@ int main(int argc, char **argv) {
 	printf("[Client] Receiveing file from Server and saving it...\n");
 	char* fr_name = cwd;
 	FILE *fr = fopen(fr_name, "a");
-	//int fr = open(fr_name, O_CREAT | O_TRUNC, S_IRUSR);
+	int bitsRec;
 	
 	if(fr == NULL)
 	{fprintf(stderr, "File %s Cannot be opened.(errno = %d)\n", fr_name, errno);exit(1);}      
-	else
-	{
-	  bzero(revbuf, BUFSIZE); 
-	  int fr_block_sz = 0;
-	  int br =0;
-	    while((fr_block_sz = recv(sockfd, revbuf, BUFSIZE, 0)) > 0)
-	    {
-		br = br + (int)fr_block_sz;
-		int write_sz = fwrite(revbuf, sizeof(char), recv(sockfd, revbuf, BUFSIZE, 0), fr);
-	        if(write_sz < fr_block_sz)
-		{fprintf(stderr,"File write failed. (errno = %d\n",errno);close (sockfd);exit(1);}
-		//bzero(revbuf, BUFSIZE);
-		
-		if (fr_block_sz == 0 || fr_block_sz != BUFSIZE) 
-		break;
-		
-		
-	    }
-	    
-	    
-	    printf("File %s received OK from server! and saved \n", filename);
-	    printf("Total Bits Received: %d\n", br);
-	    
-	}
+
+	bzero(revbuf, BUFSIZE); 
+	bitsRec = readsocket(sockfd,revbuf, fr);
 	fclose(fr);
 	close (sockfd);
+	
+	printf("File %s received OK from server! and saved \n", filename);
+	printf("Total Bits Received: %d\n", bitsRec);
 	printf("[Client] Connection lost.\n");
 	return (0);
+}
+
+int readsocket(int socket, char *buffer, FILE *fr){
+  int write_sz;
+  size_t fr_block_sz ;
+  int br =0;
+    while((fr_block_sz = recv(socket, buffer, BUFSIZE, 0)) > 0)
+    {
+	br = br + (int)fr_block_sz;
+	write_sz = fwrite(buffer, sizeof(char), fr_block_sz, fr);
+	if(write_sz < fr_block_sz)
+	{fprintf(stderr,"File write failed. (errno = %d\n",errno);close (socket);exit(1);}
+	if (fr_block_sz == 0 || fr_block_sz != BUFSIZE) 
+	break;
+    }
+    return br;
 }

@@ -170,17 +170,17 @@ int main(int argc, char **argv) {
 		            exit(1);
 		        }
 		       bt = bt+ (int)fs_block_sz;
-		       bzero(sdbuf, BUFSIZE);
 		    }
 		    
 		    printf("Ok sent to client!\n");
 		    fclose(fs);
-		    
+		    close(nsockfd);
 		    printf("[Server] Connection with Client closed. Data Sent BS:[%d].\n Server will wait now...\n",bt);
+		    bt =0;
 		   // while(waitpid(-1, NULL, WNOHANG) > 0);
 		//}
 	}
-	close(nsockfd);
+	
 	return (0);
 
 }
